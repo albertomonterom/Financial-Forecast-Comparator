@@ -7,9 +7,11 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 10080  # 7 days
+    OPENAI_API_KEY: str = ""
 
     class Config:
         env_file = ".env"
+        extra = "ignore"  # ignore any extra env vars not defined here
 
 
 settings = Settings()
