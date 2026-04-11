@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth
+from .routers import auth, tickers
 
 app = FastAPI(
     title="Financial Forecast Comparator API",
@@ -16,6 +16,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(tickers.router)
 
 
 @app.get("/health")

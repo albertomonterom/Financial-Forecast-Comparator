@@ -52,6 +52,9 @@ export const api = {
   deleteAnalysis: (id: string) =>
     request<{ success: boolean }>(`/api/v1/analyses/${id}`, { method: 'DELETE' }),
 
+  searchTickers: (q: string) =>
+    request<{ symbol: string; name: string }[]>(`/api/v1/tickers/search?q=${encodeURIComponent(q)}`),
+
   // Auth
   register: (data: RegisterRequest) =>
     request<AuthResponse>('/api/v1/auth/register', {
