@@ -41,10 +41,11 @@ flowchart TD
     A[React Frontend] -->|REST + JWT| B[FastAPI]
     B -->|enqueue task| C[(Redis)]
     C --> D[Celery Worker]
-    D -->|download prices| E[Yahoo Finance]
+    C --> E[Flower Dashboard]
+    D -->|download prices| F[Yahoo Finance]
     D -->|train MA · ARIMA · XGBoost · LSTM| D
-    D -->|persist result| F[(MongoDB Atlas)]
-    B -->|query history| F
+    D -->|persist result| G[(MongoDB Atlas)]
+    B -->|query history| G
 ```
 
 ## Run it
