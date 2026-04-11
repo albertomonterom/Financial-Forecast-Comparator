@@ -151,16 +151,6 @@ The repository already includes sample result artifacts under `data/results`, in
 
 These files help validate charts, metrics, and comparison UX before full live API integration.
 
-## Screenshots
-
-Add your UI screenshots in a `docs/images/` folder and reference them here, for example:
-
-```md
-![Landing](docs/images/landing.png)
-![Workspace](docs/images/workspace.png)
-![Results](docs/images/results.png)
-```
-
 ## Roadmap
 
 - Wire real analysis endpoints from backend to frontend (`/api/v1/analyze`, history CRUD)
