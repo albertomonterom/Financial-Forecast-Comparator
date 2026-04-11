@@ -37,11 +37,11 @@ ARIMA uses a rolling one-step-ahead expanding-window forecast, matching the eval
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[React Frontend] -->|REST + JWT| B[FastAPI]
     B -->|enqueue task| C[(Redis)]
     C --> D[Celery Worker]
-    D -->|yfinance| E[Yahoo Finance]
+    D -->|download prices| E[Yahoo Finance]
     D -->|train MA · ARIMA · XGBoost · LSTM| D
     D -->|persist result| F[(MongoDB Atlas)]
     B -->|query history| F
