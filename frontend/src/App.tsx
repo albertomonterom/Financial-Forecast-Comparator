@@ -36,7 +36,7 @@ const App = () => (
 
               {/* Protected routes — require login */}
               <Route path="/workspace" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
-              <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+              <Route path="/results/:id" element={<ProtectedRoute><Results /></ProtectedRoute>} />
               <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />

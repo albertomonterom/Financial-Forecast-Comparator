@@ -7,14 +7,8 @@ import LLMInsightCard from '@/components/LLMInsightCard';
 import ComparisonTable from '@/components/ComparisonTable';
 import MetricCard from '@/components/MetricCard';
 import { api } from '@/lib/api';
+import { MODEL_LABELS } from '@/lib/mock-data';
 import type { AnalysisResponse, ModelType, SamplingInterval } from '@/types/api';
-
-const MODEL_LABELS: Record<string, string> = {
-  moving_average: 'Moving Average',
-  arima: 'ARIMA',
-  xgboost: 'XGBoost',
-  lstm: 'LSTM',
-};
 
 export default function Workspace() {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
