@@ -16,7 +16,7 @@ Web platform that compares MA, ARIMA, XGBoost, and LSTM forecasts on any stock t
 |---|---|
 | Frontend | React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui |
 | Backend | FastAPI + Uvicorn |
-| Async jobs | Celery + Redis |
+| Async jobs | Celery + Redis + Flower |
 | Auth | JWT (`python-jose`) + bcrypt |
 | Database | MongoDB Atlas (Motor async / PyMongo sync) |
 | Models | Moving Average · ARIMA · XGBoost · LSTM (PyTorch) |
@@ -76,9 +76,10 @@ cd frontend && npm install && npm run dev
 
 | | |
 |---|---|
-| Frontend | http://localhost:8080 |
+| Frontend | http://localhost:8080 (`npm run dev`) |
 | API | http://localhost:8000 |
 | API docs | http://localhost:8000/docs |
+| Flower | http://localhost:5555 |
 
 ## API
 
