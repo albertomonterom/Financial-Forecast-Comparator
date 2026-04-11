@@ -48,6 +48,17 @@ flowchart TD
     B -->|query history| G
 ```
 
+## Screenshots
+
+### Workspace
+![Workspace](docs/images/workspace.png)
+
+### Results
+![Results](docs/images/results.png)
+
+### Flower
+![Flower](docs/images/flower.png)
+
 ## Run it
 
 ```bash
