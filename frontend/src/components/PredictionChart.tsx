@@ -77,6 +77,7 @@ export default function PredictionChart({ analysis, selectedModels }: Prediction
                 borderRadius: '8px',
                 fontSize: 12,
               }}
+              formatter={(value: number) => value.toFixed(2)}
             />
             <Legend
               wrapperStyle={{ fontSize: 12 }}

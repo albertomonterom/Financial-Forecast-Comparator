@@ -8,3 +8,12 @@ python-dotenv==1.0.1
 pydantic-settings==2.4.0
 python-multipart==0.0.9
 email-validator==2.2.0
+yfinance>=0.2.40
+pandas>=2.0.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+statsmodels>=0.14.0
+xgboost>=2.0.0
+torch>=2.2.0
+celery[redis]>=5.4.0
+redis>=5.0.0

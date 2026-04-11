@@ -6,6 +6,8 @@ import type {
   RegisterRequest,
   LoginRequest,
   AuthResponse,
+  SubmitAnalysisResponse,
+  TaskStatus,
 } from '@/types/api';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -39,11 +41,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<HealthResponse>('/health'),
 
-  analyze: (data: AnalysisRequest) =>
-    request<AnalysisResponse>('/api/v1/analyze', {
+  submitAnalysis: (data: AnalysisRequest) =>
+    request<SubmitAnalysisResponse>('/api/v1/analyze', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  getTaskStatus: (taskId: string) =>
+    request<TaskStatus>(`/api/v1/tasks/${taskId}`),
 
   getAnalyses: () => request<AnalysisHistoryItem[]>('/api/v1/analyses'),
 

@@ -1,160 +1,117 @@
 # Financial Forecast Comparator
 
-End-to-end platform for comparing time-series forecasting models on financial data, with an interactive React dashboard, authentication, ticker discovery, and a notebook-based ML pipeline for ARIMA, XGBoost, LSTM, and Moving Average experiments.
+Web platform that compares MA, ARIMA, XGBoost, and LSTM forecasts on any stock ticker. Users configure models and hyperparameters through a guided workspace, the backend trains each model in a Celery worker, and results are visualized side-by-side with error metrics and an AI-generated interpretation — all persisted per user in MongoDB.
 
 ## How it works
 
-1. The user creates an account or signs in through the auth flow
-2. The frontend lets users choose ticker symbols and model settings in a guided workspace
-3. Backend services provide auth (JWT) and ticker search via Yahoo Finance
-4. Model outputs and comparison artifacts are generated in notebooks and saved under `data/results`
-5. The UI visualizes predictions, metrics, and LLM-style interpretation panels
+1. A user registers and signs in — credentials are stored in MongoDB, session managed with JWT
+2. The workspace lets the user pick a ticker, date range, sampling interval, and hyperparameters per model
+3. Clicking **Run Analysis** sends a request to FastAPI, which submits a Celery task and returns a `task_id` immediately
+4. The **Celery worker** downloads market data from Yahoo Finance, trains each selected model, computes error metrics, and saves the result to MongoDB
+5. The frontend polls the task status every 2 seconds and renders the results — predictions chart, metrics table, and model comparison — once complete
 
 ## Stack
 
 | | |
 |---|---|
-| Frontend | React 18 + TypeScript + Vite + Tailwind + shadcn/ui |
-| State/Data | TanStack Query + React Hook Form + Zod |
-| Backend API | FastAPI + Uvicorn |
-| Auth | JWT (`python-jose`) + BCrypt |
-| Database | MongoDB (Motor / PyMongo) |
-| Market Data | yfinance (ticker search) |
-| Modeling Workflow | Jupyter notebooks (ARIMA, XGBoost, LSTM, Moving Average, LLM interpretation) |
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui |
+| Backend | FastAPI + Uvicorn |
+| Async jobs | Celery + Redis |
+| Auth | JWT (`python-jose`) + bcrypt |
+| Database | MongoDB Atlas (Motor async / PyMongo sync) |
+| Models | Moving Average · ARIMA · XGBoost · LSTM (PyTorch) |
+| Market data | yfinance |
+| Infra | Docker Compose |
 
-## Current status
+## Model results — AAPL 2020–2024 (daily, 80/20 split)
 
-- Implemented now:
-	- Authentication endpoints (`register`, `login`)
-	- Protected frontend routes (`workspace`, `results`, `history`)
-	- Ticker search endpoint
-	- Complete frontend UI and model-comparison screens
-- In progress / next backend step:
-	- Live analysis endpoints (`/api/v1/analyze`, `/api/v1/analyses`) currently represented in frontend types and consumed with mock data in UI screens
+| Model | MAE | RMSE | MAPE |
+|---|---|---|---|
+| ARIMA (0,1,0) | 2.69 | 4.05 | 1.20% |
+| LSTM | 6.31 | 8.77 | 2.58% |
+| Moving Average (window=30) | 9.34 | 11.67 | 4.08% |
+| XGBoost | 16.97 | 23.98 | 6.78% |
+
+ARIMA uses a rolling one-step-ahead expanding-window forecast, matching the evaluation methodology from the research notebooks.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-		A[React Frontend\nVite + Tailwind] -->|REST + JWT| B[FastAPI Backend]
-		B --> C[(MongoDB)]
-		B --> D[Yahoo Finance\nTicker Search]
-		E[Jupyter Notebooks\n01-08] --> F[data/results artifacts]
-		F --> A
+    A[React Frontend] -->|REST + JWT| B[FastAPI]
+    B -->|enqueue task| C[(Redis)]
+    C --> D[Celery Worker]
+    D -->|yfinance| E[Yahoo Finance]
+    D -->|train MA · ARIMA · XGBoost · LSTM| D
+    D -->|persist result| F[(MongoDB Atlas)]
+    B -->|query history| F
 ```
 
-## Project structure
-
-```text
-Financial-Forecast-Comparator/
-├─ backend/
-│  ├─ app/
-│  │  ├─ routers/            # auth + ticker endpoints
-│  │  ├─ core/               # security helpers (JWT, password hashing)
-│  │  ├─ config.py           # env-based settings
-│  │  └─ main.py             # FastAPI app entrypoint
-│  └─ requirements.txt
-├─ frontend/
-│  ├─ src/
-│  │  ├─ pages/              # login/register/workspace/results/history/about
-│  │  ├─ components/         # charts, tables, cards, auth UI, navbar
-│  │  ├─ hooks/              # auth + theme providers
-│  │  ├─ lib/                # API client + mock analysis data
-│  │  └─ types/              # typed contracts for API payloads
-│  └─ package.json
-├─ notebooks/                # model development pipeline
-├─ data/
-│  ├─ raw/
-│  ├─ processed/
-│  └─ results/               # model outputs + interpretation artifacts
-└─ README.md
-```
-
-## API overview
-
-### Health
-
-- `GET /health`
-
-### Auth
-
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `GET /api/v1/auth/me` (placeholder pattern for protected profile fetch)
-
-### Tickers
-
-- `GET /api/v1/tickers/search?q=AAPL`
-
-## Local setup
-
-## 1. Clone repository
+## Run it
 
 ```bash
 git clone https://github.com/<your-username>/Financial-Forecast-Comparator.git
 cd Financial-Forecast-Comparator
 ```
 
-## 2. Backend setup (FastAPI)
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
 Create `backend/.env`:
 
 ```env
-MONGODB_URL=mongodb://localhost:27017
+MONGODB_URL=your_mongodb_atlas_connection_string
 DB_NAME=financial_forecast
-JWT_SECRET=replace_with_a_strong_secret
+JWT_SECRET=your_strong_secret
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=10080
+REDIS_URL=redis://redis:6379/0
 OPENAI_API_KEY=
 ```
 
-Run backend:
-
 ```bash
-uvicorn app.main:app --reload --port 8000
+docker compose up --build
 ```
 
-## 3. Frontend setup (Vite + React)
-
 ```bash
-cd ../frontend
-npm install
-npm run dev
+cd frontend && npm install && npm run dev
 ```
 
-Frontend runs on `http://localhost:8080` by default.
+| | |
+|---|---|
+| Frontend | http://localhost:8080 |
+| API | http://localhost:8000 |
+| API docs | http://localhost:8000/docs |
 
-## 4. Optional checks
+## API
 
-```bash
-# frontend
-npm run build
-npm run test
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/v1/auth/register` | Create account |
+| POST | `/api/v1/auth/login` | Sign in |
+| GET | `/api/v1/tickers/search?q=` | Ticker autocomplete |
+| POST | `/api/v1/analyze` | Submit analysis job → `task_id` |
+| GET | `/api/v1/tasks/{task_id}` | Poll task status and result |
+| GET | `/api/v1/analyses` | List user's past analyses |
+| GET | `/api/v1/analyses/{id}` | Fetch saved analysis |
+| DELETE | `/api/v1/analyses/{id}` | Delete analysis |
+
+## Project structure
+
 ```
-
-## Model outputs
-
-The repository already includes sample result artifacts under `data/results`, including:
-
-- `moving_average_AAPL.csv`
-- `arima_AAPL.csv`
-- `xgboost_AAPL.csv`
-- `lstm_AAPL.csv`
-- `llm_interpretation_AAPL.txt`
-
-These files help validate charts, metrics, and comparison UX before full live API integration.
-
-## Roadmap
-
-- Wire real analysis endpoints from backend to frontend (`/api/v1/analyze`, history CRUD)
-- Persist analysis runs per authenticated user in MongoDB
-- Add model training/evaluation jobs as backend services
-- Integrate production LLM explanation service for generated insights
-- Add CI checks for lint/tests and API contract validation
+Financial-Forecast-Comparator/
+├── backend/
+│   ├── app/
+│   │   ├── models/          # MA, ARIMA, XGBoost, LSTM implementations
+│   │   ├── routers/         # analyze, auth, tickers
+│   │   ├── schemas/         # Pydantic request/response models
+│   │   ├── celery_app.py
+│   │   ├── tasks.py         # background analysis job
+│   │   └── main.py
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── pages/           # workspace, results, history, about, auth
+│       ├── components/      # chart, comparison table, analysis panel
+│       └── lib/             # API client
+├── notebooks/               # exploratory pipeline (01–08)
+├── data/                    # raw, processed, results artifacts
+└── docker-compose.yml
+```

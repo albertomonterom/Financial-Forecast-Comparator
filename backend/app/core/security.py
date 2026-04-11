@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 import bcrypt
-from fastapi import HTTPException, Security
+from bson import ObjectId
+from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from ..config import settings
 
@@ -39,3 +40,14 @@ def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
 ) -> str:
     return decode_token(credentials.credentials)
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
+):
+    from ..database import db  # local import to avoid circular dependency
+    user_id = decode_token(credentials.credentials)
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user

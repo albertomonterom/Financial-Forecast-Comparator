@@ -67,6 +67,19 @@ export interface HealthResponse {
   version: string;
 }
 
+// Celery task
+export interface SubmitAnalysisResponse {
+  task_id: string;
+  status: string;
+}
+
+export interface TaskStatus {
+  status: 'pending' | 'running' | 'success' | 'failed';
+  step?: string;
+  result?: AnalysisResponse;
+  error?: string;
+}
+
 // Auth
 export interface RegisterRequest {
   name: string;

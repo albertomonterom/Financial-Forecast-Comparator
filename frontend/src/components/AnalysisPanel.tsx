@@ -28,10 +28,10 @@ const intervals: { value: SamplingInterval; label: string }[] = [
 
 // Default hyperparameters for each model
 const DEFAULT_HYPERPARAMS: Record<ModelType, Record<string, number>> = {
-  moving_average: { window: 20 },
-  arima:          { p: 5, d: 1, q: 0 },
-  xgboost:        { n_estimators: 100, max_depth: 3, learning_rate: 100 }, // learning_rate / 1000 = 0.1
-  lstm:           { epochs: 50, units: 50, dropout: 20, seq_length: 60 }, // dropout * 0.01
+  moving_average: { window: 30 },                                           // notebook: window=30
+  arima:          { p: 0, d: 1, q: 0 },                                    // notebook: auto_arima → (0,1,0)
+  xgboost:        { n_estimators: 200, max_depth: 4, learning_rate: 50 },  // notebook: 200 / 4 / 0.05 (50/1000)
+  lstm:           { epochs: 200, units: 64, dropout: 20, seq_length: 30 }, // notebook: 200 / 64 / 0.20 / 30
 };
 
 // Human-readable labels + min/max/step for each param
