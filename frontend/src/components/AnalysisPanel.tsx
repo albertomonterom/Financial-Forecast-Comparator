@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Settings2, Play, Loader2, ChevronDown } from 'lucide-react';
+import { Calendar, Settings2, Play, Loader2, ChevronDown, HelpCircle } from 'lucide-react';
 import type { ModelType, SamplingInterval } from '@/types/api';
 import { MODEL_LABELS } from '@/lib/mock-data';
 import TickerSearch from '@/components/TickerSearch';
@@ -41,20 +41,32 @@ const PARAM_CONFIG: Record<string, {
   max: number;
   step: number;
   display?: (v: number) => string;
+  tooltip: string;
 }> = {
-  window:        { label: 'Window',        min: 5,    max: 100,  step: 1  },
-  p:             { label: 'p (AR order)',   min: 0,    max: 10,   step: 1  },
-  d:             { label: 'd (Diff order)', min: 0,    max: 2,    step: 1  },
-  q:             { label: 'q (MA order)',   min: 0,    max: 10,   step: 1  },
-  n_estimators:  { label: 'Estimators',     min: 10,   max: 500,  step: 10 },
-  max_depth:     { label: 'Max Depth',      min: 1,    max: 10,   step: 1  },
-  learning_rate: { label: 'Learning Rate',  min: 1,    max: 300,  step: 1,
-                   display: (v) => (v / 1000).toFixed(3) },
-  epochs:        { label: 'Epochs',         min: 10,   max: 500,  step: 10 },
-  units:         { label: 'Units',          min: 16,   max: 256,  step: 16 },
-  dropout:       { label: 'Dropout',        min: 0,    max: 50,   step: 5,
-                   display: (v) => (v / 100).toFixed(2) },
-  seq_length:    { label: 'Sequence Length', min: 10,   max: 120,  step: 5  },
+  window:        { label: 'Window',         min: 5,   max: 100,  step: 1,
+                   tooltip: 'Number of past periods averaged to produce each forecast point. Larger windows are smoother but slower to react to trends.' },
+  p:             { label: 'p (AR order)',    min: 0,   max: 10,   step: 1,
+                   tooltip: 'Autoregressive order — how many past values the model uses to predict the next one. Start with 1–5 for daily stock data.' },
+  d:             { label: 'd (Diff order)',  min: 0,   max: 2,    step: 1,
+                   tooltip: 'Differencing order — how many times the series is differenced to make it stationary. Usually 1 for stock prices.' },
+  q:             { label: 'q (MA order)',    min: 0,   max: 10,   step: 1,
+                   tooltip: 'Moving-average order — how many past forecast errors are included in the model. Helps capture short-term shocks.' },
+  n_estimators:  { label: 'Estimators',      min: 10,  max: 500,  step: 10,
+                   tooltip: 'Number of decision trees in the ensemble. More trees generally improve accuracy but increase training time.' },
+  max_depth:     { label: 'Max Depth',       min: 1,   max: 10,   step: 1,
+                   tooltip: 'Maximum depth of each decision tree. Deeper trees can model complex patterns but may overfit the training data.' },
+  learning_rate: { label: 'Learning Rate',   min: 1,   max: 300,  step: 1,
+                   display: (v) => (v / 1000).toFixed(3),
+                   tooltip: 'Step size at each boosting iteration. Lower values (0.01–0.05) train slower but generalize better; higher values train faster but may overfit.' },
+  epochs:        { label: 'Epochs',          min: 10,  max: 500,  step: 10,
+                   tooltip: 'Number of full passes through the training data. More epochs can improve accuracy but risk overfitting if the model sees the data too many times.' },
+  units:         { label: 'Units',           min: 16,  max: 256,  step: 16,
+                   tooltip: 'Number of neurons in the LSTM layer. More units capture more complex patterns but require more data and computation.' },
+  dropout:       { label: 'Dropout',         min: 0,   max: 50,   step: 5,
+                   display: (v) => (v / 100).toFixed(2),
+                   tooltip: 'Fraction of neurons randomly disabled during training to prevent overfitting. 0.20 means 20% of neurons are dropped each step.' },
+  seq_length:    { label: 'Sequence Length', min: 10,  max: 120,  step: 5,
+                   tooltip: 'Number of past time steps fed into the LSTM as context for each prediction. Longer sequences capture longer-term patterns.' },
 };
 
 export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps) {
@@ -93,6 +105,15 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
     onSubmit?.({ ticker, startDate, endDate, interval, models: selectedModels, splitRatio, hyperparameters: finalParams });
   };
 
+  const InfoTip = ({ text }: { text: string }) => (
+    <span className="relative group/tip inline-flex items-center">
+      <HelpCircle className="w-3 h-3 text-muted-foreground/50 group-hover/tip:text-muted-foreground cursor-help shrink-0" />
+      <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2 w-48 rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-[9999] whitespace-normal text-left normal-case tracking-normal font-normal">
+        {text}
+      </span>
+    </span>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -106,15 +127,21 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
 
       {/* Ticker */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ticker Symbol</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ticker Symbol</label>
+          <InfoTip text="The stock, ETF, or index symbol to analyze. Use the search box to find any asset traded on Yahoo Finance." />
+        </div>
         <TickerSearch value={ticker} onChange={setTicker} />
       </div>
 
       {/* Date Range */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-          <Calendar className="w-3 h-3" /> Date Range
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+            <Calendar className="w-3 h-3" /> Date Range
+          </label>
+          <InfoTip text="Historical period to download from Yahoo Finance. A longer range gives models more data to learn from, but very old data may not reflect current market behavior." />
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <input
             type="date"
@@ -133,7 +160,10 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
 
       {/* Interval */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sampling Interval</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sampling Interval</label>
+          <InfoTip text="How frequently prices are sampled. Daily gives the most detail; weekly/monthly reduce noise and speed up training." />
+        </div>
         <div className="flex gap-1.5">
           {intervals.map((opt) => (
             <button
@@ -153,7 +183,10 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
 
       {/* Models */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Models</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Models</label>
+          <InfoTip text="Select which forecasting models to run and compare. Deselected models are skipped entirely. You need at least one." />
+        </div>
         <div className="space-y-1.5">
           {allModels.map((m) => (
             <button
@@ -173,9 +206,12 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
 
       {/* Split Ratio */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Train/Test Split — {Math.round(splitRatio * 100)}%
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Train/Test Split — {Math.round(splitRatio * 100)}%
+          </label>
+          <InfoTip text="Portion of data used for training vs. evaluation. 80% means the model trains on the first 80% of dates and is tested on the remaining 20%." />
+        </div>
         <input
           type="range"
           min={0.5}
@@ -188,7 +224,7 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
       </div>
 
       {/* Advanced Configuration */}
-      <div className="border border-border/40 rounded-lg overflow-hidden">
+      <div className="border border-border/40 rounded-lg">
         <button
           onClick={() => setShowAdvanced((v) => !v)}
           className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
@@ -206,7 +242,7 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="overflow-hidden"
+              style={{ overflow: showAdvanced ? 'visible' : 'hidden' }}
             >
               <div className="px-3 pb-3 space-y-4 border-t border-border/40 pt-3">
                 {selectedModels.map((model) => (
@@ -225,7 +261,10 @@ export default function AnalysisPanel({ onSubmit, loading }: AnalysisPanelProps)
                         <div key={param} className="space-y-1">
                           <div className="flex justify-between items-center">
                             <span className="text-xs text-muted-foreground">{cfg.label}</span>
-                            <span className="text-xs font-mono font-bold text-foreground">{displayVal}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-mono font-bold text-foreground">{displayVal}</span>
+                              <InfoTip text={cfg.tooltip} />
+                            </div>
                           </div>
                           <input
                             type="range"
